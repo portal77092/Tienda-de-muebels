@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tienda de Muebles 3D</title>
+  <meta name="description" content="Ecommerce de muebles con vista 3D interactiva de los artículos." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  
+  <!-- 🚀 Web Component para 3D: model-viewer -->
+  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
+  <style>
+    :root{
+      --bg:#0b0c10; --card:#121318; --muted:#a7b0c0; --text:#e9edf5; --brand:#7c5cff; --brand-2:#36e2a1;
+      --ring: 0 0 0 3px rgba(124,92,255,.3);
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial; background:linear-gradient(180deg,#0b0c10 0%, #11121a 100%); color:var(--text)}
+    a{color:inherit}
+    .container{max-width:1200px;margin-inline:auto;padding:24px}
+    header{position:sticky;top:0;backdrop-filter:saturate(180%) blur(8px); background:rgba(11,12,16,.6); border-bottom:1px solid rgba(255,255,255,.06); z-index:50}
+    .nav{display:flex;align-items:center;gap:16px;justify-content:space-between;padding:14px 24px}
+    .logo{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.4px}
+    .logo-dot{width:10px;height:10px;border-radius:999px;background:linear-gradient(135deg,var(--brand),var(--brand-2))}
+    .search{flex:1;display:flex;gap:10px;max-width:560px;margin-inline:24px}
+    .search input{flex:1;background:var(--card);border:1px solid rgba(255,255,255,.08);color:var(--text);padding:12px 14px;border-radius:12px}
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.03));color:var(--text);cursor:pointer}
+    .btn:hover{box-shadow:var(--ring)}
+    .hero{display:grid;grid-template-columns:1.2fr .8fr;gap:28px;align-items:center;padding:40px 24px}
+    .hero-card{background:radial-gradient(1000px 400px at 20% -10%, rgba(124,92,255,.15), transparent), var(--card); border:1px solid rgba(255,255,255,.08); padding:28px;border-radius:20px}
+    .hero h1{font-size:clamp(28px,4vw,44px);margin:0 0 8px}
+    .hero p{color:var(--muted);margin:0 0 18px}
+    .badges{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+    .badge{font-size:12px;padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.12);color:#cfd6e6;background:rgba(255,255,255,.04)}
+    .filters{display:flex;gap:10px;flex-wrap:wrap}
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+    .card{background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:18px;overflow:hidden;display:flex;flex-direction:column}
+    .thumb{aspect-ratio:4/3;background:#0d0f14;display:grid;place-items:center}
+    .thumb img{max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(0 10px 20px rgba(0,0,0,.6))}
+    .content{padding:16px;display:flex;flex-direction:column;gap:10px}
+    .title{font-weight:700}
+    .price{font-weight:800;font-size:18px}
+    .muted{color:var(--muted)}
+    .row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .colors{display:flex;gap:8px}
+    .dot{width:18px;height:18px;border-radius:999px;border:1px solid rgba(255,255,255,.2);cursor:pointer}
+    .dot[aria-selected="true"]{outline:3px solid rgba(255,255,255,.18)}
+
+    /* Modal */
+    dialog#viewer{width:min(1000px,96vw);border:none;padding:0;border-radius:18px;overflow:hidden;background:var(--card);color:var(--text)}
+    dialog::backdrop{background:rgba(0,0,0,.6);backdrop-filter:blur(3px)}
+    .viewer-wrap{display:grid;grid-template-columns:1.2fr .8fr}
+    model-viewer{width:100%;height:520px;background:linear-gradient(180deg,#0c0f15,#0a0c12); --poster-color: transparent}
+    .side{padding:20px;border-left:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:12px}
+    .props{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+    .prop{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);padding:10px;border-radius:12px}
+    .close-x{position:absolute;right:10px;top:8px}
+
+    /* Cart */
+    .cart{position:fixed;right:18px;bottom:18px;background:var(--card);border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:10px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 10px 30px rgba(0,0,0,.45)}
+    .cart-items{font-weight:700}
+
+    footer{margin-top:60px;padding:40px 24px;border-top:1px solid rgba(255,255,255,.06);color:#aeb6c6}
+
+    @media (max-width: 980px){
+      .hero{grid-template-columns:1fr}
+      .viewer-wrap{grid-template-columns:1fr}
+      model-viewer{height:420px}
+      .grid{grid-template-columns:1fr 1fr}
+    }
+    @media (max-width: 640px){
+      .grid{grid-template-columns:1fr}
+      .search{margin:0}
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="nav container">
+      <div class="logo"><span class="logo-dot"></span> NovaHome 3D</div>
+      <div class="search">
+        <input id="q" type="search" placeholder="Buscar sofás, sillas, mesas…" aria-label="Buscar" />
+        <button class="btn" id="btnSearch" aria-label="Buscar productos">🔎 Buscar</button>
+      </div>
+      <button class="btn" id="openCart" aria-label="Abrir carrito">🛒 Carrito <span class="cart-items" id="cartCount">0</span></button>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <div class="hero-card">
+        <h1>Muebles modernos </h1>
+        <p>Explora acabados, gira y acerca los modelos 3D antes de comprar. Compatible con AR en móviles para verlos en tu espacio.</p>
+        <div class="badges">
+          <span class="badge">⚡ Carga rápida</span>
+          <span class="badge">🧩 GLB/GLTF</span>
+          <span class="badge">📱 Responsive + A11y</span>
+          <span class="badge">🕶️ AR (USDZ/SceneViewer)</span>
+        </div>
+        <div class="badges" style="margin-top:14px">
+          <button class="btn" id="filterSillas">Sillas</button>
+          <button class="btn" id="filterSofas">Sofás</button>
+          <button class="btn" id="filterMesas">Mesas</button>
+          <button class="btn" id="clearFilters">Quitar filtros</button>
+        </div>
+      </div>
+      <div class="hero-card">
+        <model-viewer id="heroModel"
+          src="models/sofa_gltf/scene.gltf"
+          camera-controls autoplay auto-rotate
+          alt="Silla escandinava en 3D">
+          <button class="btn" slot="ar-button" style="position:absolute;left:16px;bottom:16px">Ver en mi espacio</button>
+        </model-viewer>
+      </div>
+    </section>
+
+    <section>
+      <div class="row" style="margin: 8px 0 16px">
+        <h2 style="margin:0">Catálogo</h2>
+        <div class="filters">
+          <select id="sort" class="btn" aria-label="Ordenar">
+            <option value="popular">Más populares</option>
+            <option value="price-asc">Precio: menor a mayor</option>
+            <option value="price-desc">Precio: mayor a menor</option>
+            <option value="new">Novedades</option>
+          </select>
+        </div>
+      </div>
+      <div id="grid" class="grid" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <dialog id="viewer" aria-label="Vista 3D del producto">
+    <button class="btn close-x" onclick="viewer.close()">✖</button>
+    <div class="viewer-wrap">
+      <model-viewer id="mv"
+        src=""
+        ar ar-modes="webxr scene-viewer quick-look" camera-controls
+        shadow-intensity="1" exposure="1.05" environment-image="neutral"
+        interaction-prompt="auto" touch-action="pan-y" autoplay auto-rotate>
+        <button class="btn" slot="ar-button" style="position:absolute;left:16px;bottom:16px">Ver en mi espacio</button>
+      </model-viewer>
+      <div class="side">
+        <h3 id="vTitle" style="margin:0"></h3>
+        <div class="muted" id="vSku"></div>
+        <div class="price" id="vPrice"></div>
+        <div class="props">
+          <div class="prop">
+            <div class="muted">Material</div>
+            <div id="vMaterial">—</div>
+          </div>
+          <div class="prop">
+            <div class="muted">Dimensiones</div>
+            <div id="vDims">—</div>
+          </div>
+          <div class="prop">
+            <div class="muted">Color</div>
+            <div id="vColor">—</div>
+          </div>
+          <div class="prop">
+            <div class="muted">Entrega</div>
+            <div>48–72h</div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="colors" id="vColors"></div>
+          <button class="btn" id="addToCart">Añadir al carrito</button>
+        </div>
+        <p class="muted" id="vDesc" style="margin:6px 0 0"></p>
+      </div>
+    </div>
+  </dialog>
+
+  <div class="cart" role="status" aria-live="polite">
+    <span>🛒</span>
+    <span><strong>Carrito</strong>:</span>
+    <span class="cart-items" id="cartCount2">0</span>
+    <button class="btn" onclick="alert('Checkout demo')">Finalizar compra</button>
+  </div>
+
+  <footer class="container">
+    <div class="row">
+      <div>© <span id="year"></span> NovaHome 3D</div>
+      <div class="muted">Optimizado con <code>&lt;model-viewer&gt;</code>. Sustituye las URLs GLB por tus modelos propios (GLB/GLTF/USdz).</div>
+    </div>
+  </footer>
+
+  <script>
+    // --- Datos de ejemplo --- //
+    const PRODUCTS = [
+      {
+        id:"CHAIR-001", name:"Silla Nórdica Lykke", price:129.99, category:"silla",
+        image:"https://images.unsplash.com/photo-1549187774-b4e9b0445b41?q=80&w=1200&auto=format&fit=crop",
+        model:"models/sofa_gltf/scene.gltf",
+        material:"Madera y tejido", dims:"82×46×52 cm", desc:"Diseño escandinavo con ergonomía optimizada.",
+        colors:["#c9a16b","#2f2f2f","#d9d9d9"]
+      },
+      {
+        id:"SOFA-002", name:"Sofá Modular Aria", price:799.00, category:"sofa",
+        image:"https://images.unsplash.com/photo-1505691938895-1758d7feb511?q=80&w=1200&auto=format&fit=crop",
+        // Nota: reemplaza por tu propio modelo de sofá (GLB). Ejemplo placeholder usando el mismo Chair.glb
+        model:"https://modelviewer.dev/shared-assets/models/Chair.glb",
+        material:"Tela premium y espuma HR", dims:"210×95×86 cm", desc:"Módulos reversibles y funda lavable.",
+        colors:["#838383","#1b1b1b","#b68b6b"]
+      },
+      {
+        id:"TABLE-003", name:"Mesa Café Orbit", price:199.50, category:"mesa",
+        image:"https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?q=80&w=1200&auto=format&fit=crop",
+        // Reemplazar con modelo de mesa
+        model:"https://modelviewer.dev/shared-assets/models/Chair.glb",
+        material:"Acero y cristal templado", dims:"Ø 90×45 cm", desc:"Superficie redondeada con bordes suaves.",
+        colors:["#222","#cccccc"]
+      },
+      {
+        id:"CHAIR-004", name:"Silla Lounge Nexo", price:179.00, category:"silla",
+        image:"https://images.unsplash.com/photo-1519710164239-da123dc03ef4?q=80&w=1200&auto=format&fit=crop",
+        model:"https://modelviewer.dev/shared-assets/models/Chair.glb",
+        material:"Roble y piel vegana", dims:"88×54×56 cm", desc:"Reposabrazos ancho y postura relajada.",
+        colors:["#4a3728","#101010","#bfa47a"]
+      }
+    ];
+
+    // --- Render dinámico del grid --- //
+    const grid = document.getElementById('grid');
+    const q = document.getElementById('q');
+    const sortSel = document.getElementById('sort');
+    let filtered = [...PRODUCTS];
+
+    function money(v){return v.toLocaleString('es-ES',{style:'currency',currency:'EUR'})}
+
+    function paint(){
+      grid.innerHTML = '';
+      filtered.forEach(p=>{
+        const card = document.createElement('article');
+        card.className = 'card';
+        card.innerHTML = `
+          <div class="thumb">
+            <img src="${p.image}" alt="${p.name}" loading="lazy" width="640" height="480"/>
+          </div>
+          <div class="content">
+            <div class="row"><div class="title">${p.name}</div><div class="price">${money(p.price)}</div></div>
+            <div class="muted">${p.material}</div>
+            <div class="row">
+              <div class="colors">${p.colors.map((c,i)=>`<button class="dot" style="background:${c}" aria-label="Color ${i+1}" data-color="${c}"></button>`).join('')}</div>
+              <div>
+                <button class="btn btn-view" data-id="${p.id}">👀 Vista 3D</button>
+                <button class="btn btn-add" data-id="${p.id}">➕ Añadir</button>
+              </div>
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+      })
+    }
+
+    function applySort(v){
+      if(v==='price-asc') filtered.sort((a,b)=>a.price-b.price);
+      else if(v==='price-desc') filtered.sort((a,b)=>b.price-a.price);
+      else if(v==='new') filtered.sort((a,b)=>b.id.localeCompare(a.id));
+      else filtered = filtered; // popular = default
+    }
+
+    function applySearch(){
+      const term = q.value.trim().toLowerCase();
+      filtered = PRODUCTS.filter(p => [p.name,p.material,p.category].join(' ').toLowerCase().includes(term));
+      applySort(sortSel.value);
+      paint();
+    }
+
+    document.getElementById('btnSearch').addEventListener('click', applySearch);
+    q.addEventListener('keydown', e=>{ if(e.key==='Enter') applySearch(); });
+    sortSel.addEventListener('change', ()=>{ applySort(sortSel.value); paint(); });
+
+    document.getElementById('filterSillas').onclick=()=>{filtered=PRODUCTS.filter(p=>p.category==='silla'); applySort(sortSel.value); paint();}
+    document.getElementById('filterSofas').onclick =()=>{filtered=PRODUCTS.filter(p=>p.category==='sofa'); applySort(sortSel.value); paint();}
+    document.getElementById('filterMesas').onclick =()=>{filtered=PRODUCTS.filter(p=>p.category==='mesa'); applySort(sortSel.value); paint();}
+    document.getElementById('clearFilters').onclick=()=>{filtered=[...PRODUCTS]; applySort(sortSel.value); paint();}
+
+    // --- Modal 3D --- //
+    const viewer = document.getElementById('viewer');
+    const mv = document.getElementById('mv');
+    const vTitle = document.getElementById('vTitle');
+    const vSku = document.getElementById('vSku');
+    const vPrice = document.getElementById('vPrice');
+    const vMaterial = document.getElementById('vMaterial');
+    const vDims = document.getElementById('vDims');
+    const vColor = document.getElementById('vColor');
+    const vDesc = document.getElementById('vDesc');
+    const vColors = document.getElementById('vColors');
+    const addToCartBtn = document.getElementById('addToCart');
+
+    let currentProduct = null;
+
+    grid.addEventListener('click', (e)=>{
+      const btn = e.target.closest('.btn-view');
+      const addBtn = e.target.closest('.btn-add');
+      if(btn){
+        const id = btn.dataset.id;
+        openViewer(id);
+      }
+      if(addBtn){
+        const id = addBtn.dataset.id; const p = PRODUCTS.find(x=>x.id===id); addToCart(p);
+      }
+    });
+
+    function openViewer(id){
+      const p = PRODUCTS.find(x=>x.id===id);
+      if(!p) return;
+      currentProduct = p;
+      mv.src = p.model;
+      vTitle.textContent = p.name;
+      vSku.textContent = `SKU: ${p.id}`;
+      vPrice.textContent = money(p.price);
+      vMaterial.textContent = p.material;
+      vDims.textContent = p.dims;
+      vColor.textContent = '—';
+      vDesc.textContent = p.desc;
+      vColors.innerHTML = p.colors.map((c,i)=>`<button class="dot" style="background:${c}" aria-label="Color ${i+1}" data-color="${c}"></button>`).join('');
+      vColors.querySelectorAll('.dot').forEach((el,i)=>{
+        el.addEventListener('click',()=>{
+          vColors.querySelectorAll('.dot').forEach(x=>x.setAttribute('aria-selected','false'));
+          el.setAttribute('aria-selected','true');
+          vColor.textContent = el.dataset.color;
+          // Demo: ajustamos el tono de luz según color (sólo visual)
+          mv.style.filter = `hue-rotate(${i*12}deg)`;
+        })
+      })
+      viewer.showModal();
+    }
+
+    // --- Carrito sencillo --- //
+    const cartCount = document.getElementById('cartCount');
+    const cartCount2 = document.getElementById('cartCount2');
+    let cart = [];
+
+    function addToCart(p){
+      const found = cart.find(i=>i.id===p.id);
+      if(found) found.qty++; else cart.push({id:p.id,name:p.name,price:p.price,qty:1});
+      const totalQty = cart.reduce((s,i)=>s+i.qty,0);
+      cartCount.textContent = totalQty; cartCount2.textContent = totalQty;
+      // feedback accesible
+      const sr = document.createElement('div'); sr.setAttribute('role','status'); sr.className='sr'; sr.textContent = `${p.name} añadido al carrito`;
+      document.body.appendChild(sr); setTimeout(()=>sr.remove(),1200);
+    }
+
+    addToCartBtn.addEventListener('click',()=>{ if(currentProduct) addToCart(currentProduct); });
+
+    // Inicialización
+    document.getElementById('year').textContent = new Date().getFullYear();
+    applySort(sortSel.value); paint();
+  </script>
+  <!-- Catálogo -->
+<div class="catalogo">
+  <div class="producto" onclick="abrirVisor('models/mueble.glb')">
+    <img src="img/mueble.jpg" alt="Mueble">
+    <h3>Mueble Moderno</h3>
+    <p>$299</p>
+  </div>
+</div>
+
+<!-- Modal del visor 3D -->
+<div id="visorModal" class="modal">
+  <div class="modal-content">
+    <span class="cerrar" onclick="cerrarVisor()">&times;</span>
+    <div id="visor3D"></div>
+  </div>
+</div>
+
+</body>
+</html>
