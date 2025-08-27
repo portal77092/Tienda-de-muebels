@@ -183,7 +183,7 @@
   <footer class="container">
     <div class="row">
       <div>© <span id="year"></span> NovaHome 3D</div>
-      <div class="muted">Optimizado con <code>&lt;model-viewer&gt;</code>. Sustituye las URLs GLB por tus modelos propios (GLB/GLTF/USdz).</div>
+      
     </div>
   </footer>
 
@@ -351,14 +351,7 @@
     document.getElementById('year').textContent = new Date().getFullYear();
     applySort(sortSel.value); paint();
   </script>
-  <!-- Catálogo -->
-<div class="catalogo">
-  <div class="producto" onclick="abrirVisor('models/mueble.glb')">
-    <img src="img/mueble.jpg" alt="Mueble">
-    <h3>Mueble Moderno</h3>
-    <p>$299</p>
-  </div>
-</div>
+
 
 <!-- Modal del visor 3D -->
 <div id="visorModal" class="modal">
